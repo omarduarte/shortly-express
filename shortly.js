@@ -44,7 +44,7 @@ function(req, res) {
   res.render('index');
 });
 
-app.get('/create',
+app.get('/create', restrict,
 function(req, res) {
   res.render('index');
 });
@@ -59,14 +59,20 @@ function(req, res) {
   res.render('login');
 });
 
-app.get('/links',
+app.get('/logout', function(req, res){
+    req.session.destroy(function(){
+        res.redirect('/');
+    });
+});
+
+app.get('/links',restrict,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links',
+app.post('/links',restrict,
 function(req, res) {
   var uri = req.body.url;
 
@@ -156,13 +162,19 @@ app.post('/login', function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-
-//define user flow in terms of login page, signup page
-//2. sessions and tokens stored on the cookie
+//logout
+//tests
 //3. salting and hashing
+//sessions:
+  //time to live for tokens
+  //saving tokens in database along with their expiration time
+  //allowing a user to have multiple tokens (across multiple devices)
+
 
 
 //** 1. store username and password in plain text
+//** define user flow in terms of login page, signup page
+//**2. sessions and tokens stored on the cookie
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
