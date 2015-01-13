@@ -33,6 +33,7 @@ h1 {
 
 .navigation .logout {
   float: right;
+  position:relative;
 }
 
 .navigation li a , .logout {
@@ -49,6 +50,14 @@ h1 {
 }
 
 .navigation li a.selected {
+  background-color: #ccc;
+}
+
+.logout:hover {
+  background-color: #ddd;
+}
+
+.logout.selected {
   background-color: #ccc;
 }
 
@@ -135,3 +144,8 @@ form input[type=text], form input[type=password] {
 .creator .message {
   clear: both;
 }
+
+/*.logout {
+  position:relative;
+
+}*/

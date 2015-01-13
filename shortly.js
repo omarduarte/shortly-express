@@ -162,7 +162,6 @@ app.post('/login', function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-//logout
 //tests
 //3. salting and hashing
 //sessions:
@@ -175,6 +174,7 @@ app.post('/login', function(req, res) {
 //** 1. store username and password in plain text
 //** define user flow in terms of login page, signup page
 //**2. sessions and tokens stored on the cookie
+//**logout
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
