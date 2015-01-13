@@ -124,10 +124,11 @@ function(req, res) {
         password: password
       });
 
-      user.save().then(function(newUser) {
-        Users.add(newUser);
-        // TODO: Redirect to Login Page
-        res.redirect('/login');
+      user.hash(function() {
+        user.save().then(function(newUser) {
+          Users.add(newUser);
+          res.redirect('/login');
+        });
       });
     }
   });
@@ -162,8 +163,8 @@ app.post('/login', function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-//tests
 //3. salting and hashing
+  //
 //sessions:
   //time to live for tokens
   //saving tokens in database along with their expiration time
@@ -175,6 +176,7 @@ app.post('/login', function(req, res) {
 //** define user flow in terms of login page, signup page
 //**2. sessions and tokens stored on the cookie
 //**logout
+//**tests
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.

@@ -9,10 +9,16 @@ var User = db.Model.extend({
   links: function() {
     return this.hasMany(Link);
   },
-  initialize: function(){
-    this.on('creating', function() {
-      console.log('created!');
+  hash: function(callback) {
+    var self = this;
+    bcrypt.genSalt(10, function(err, salt) {
+      bcrypt.hash(self.get('password'), salt, null, function(err, hash) {
+        self.set('password', hash);
+        callback();
+      });
     });
+  },
+  initialize: function(){
   }
 });
 
