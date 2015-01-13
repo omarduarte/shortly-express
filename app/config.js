@@ -5,8 +5,8 @@ var db = Bookshelf.initialize({
   client: 'sqlite3',
   connection: {
     host: '127.0.0.1',
-    user: 'your_database_user',
-    password: 'password',
+    user: 'omarduarte',
+    password: 'omarisawesome',
     database: 'shortlydb',
     charset: 'utf8',
     filename: path.join(__dirname, '../db/shortly.sqlite')
@@ -20,6 +20,7 @@ db.knex.schema.hasTable('urls').then(function(exists) {
       link.string('url', 255);
       link.string('base_url', 255);
       link.string('code', 100);
+      link.integer('user_id');
       link.string('title', 255);
       link.integer('visits');
       link.timestamps();
@@ -40,6 +41,21 @@ db.knex.schema.hasTable('clicks').then(function(exists) {
     });
   }
 });
+
+db.knex.schema.hasTable('users').then(function(exists) {
+  if (!exists) {
+    db.knex.schema.createTable('users', function (user) {
+      user.increments('id').primary();
+      user.string('username', 25);
+      user.string('password', 255);
+      user.timestamps();
+    }).then(function (table) {
+      console.log('Created Table', table);
+    });
+  }
+});
+
+
 
 /************************************************************/
 // Add additional schema definitions below

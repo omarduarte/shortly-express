@@ -23,24 +23,34 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
+app.get('/',
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create',
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/signup',
+function(req, res) {
+  res.render('signup');
+});
+
+app.get('/login',
+function(req, res) {
+  res.render('login');
+});
+
+app.get('/links',
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
 
@@ -49,7 +59,9 @@ function(req, res) {
     return res.send(404);
   }
 
-  new Link({ url: uri }).fetch().then(function(found) {
+  var testLink = new Link({ url: uri });
+  console.log(testLink);
+  testLink.fetch().then(function(found) {
     if (found) {
       res.send(200, found.attributes);
     } else {
@@ -74,12 +86,43 @@ function(req, res) {
   });
 });
 
+app.post('/signup',
+function(req, res) {
+
+  var username = req.body.username;
+  var password = req.body.password;
+
+  new User({username: username }).fetch().then(function (found) {
+    if (found) {
+      // TODO: Let the client know that the username already exists
+      console.log('found');
+    } else {
+      var user = new User({
+        username: username,
+        password: password
+      });
+
+      user.save().then(function(newUser) {
+        Users.add(newUser);
+        // TODO: Redirect to Login Page
+        res.redirect('/login');
+      });
+    }
+  });
+});
+
+// Define /login post route
+
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
 
+//define user flow in terms of login page, signup page
+//2. sessions and tokens stored on the cookie
+//3. salting and hashing
 
 
+//** 1. store username and password in plain text
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
