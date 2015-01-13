@@ -4,7 +4,7 @@ var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
-
+var bcrypt = require('bcrypt-nodejs');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -141,16 +141,18 @@ app.post('/login', function(req, res) {
 
   new User({username: username }).fetch().then(function (found) {
     if(found) {
-      if (found.attributes.password === password) {
-        console.log('you passed!');
-        req.session.regenerate(function(){
-          req.session.user = username;
-          res.redirect('/');
-        });
-      } else {
-        //call a function that lets the user know the username/password combo they tried does note exist
-        console.log('wrong password or user does not exist');
-      }
+      bcrypt.compare(password, found.attributes.password, function(err, result) {
+        if (result) {
+          console.log('you passed!');
+          req.session.regenerate(function(){
+            req.session.user = username;
+            res.redirect('/');
+          });
+        } else {
+          //call a function that lets the user know the username/password combo they tried does note exist
+          console.log('wrong password or user does not exist');
+        }
+      });
     } else {
       console.log('wrong password or user does not exist');
     }
@@ -163,8 +165,7 @@ app.post('/login', function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-//3. salting and hashing
-  //
+//talk through how we would implement everything in extra credit and nightmare modes
 //sessions:
   //time to live for tokens
   //saving tokens in database along with their expiration time
@@ -177,6 +178,7 @@ app.post('/login', function(req, res) {
 //**2. sessions and tokens stored on the cookie
 //**logout
 //**tests
+//**3. salting and hashing
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
