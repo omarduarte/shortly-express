@@ -2,6 +2,8 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
 
 
 var db = require('./app/config');
@@ -17,13 +19,27 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
 // Parse JSON (uniform resource locators)
+app.use(bodyParser()); //this line may be redundant with the line below
 app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+//for creating sessions
+app.use(cookieParser('this is our secret in cookieParser'));
+app.use(session());
 
-app.get('/',
+
+function restrict(req, res, next) {
+  if (req.session.user) {
+    next();
+  } else {
+    req.session.error = 'Access denied!';
+    res.redirect('/login');
+  }
+}
+
+app.get('/', restrict,
 function(req, res) {
   res.render('index');
 });
@@ -109,6 +125,30 @@ function(req, res) {
       });
     }
   });
+});
+
+app.post('/login', function(req, res) {
+
+  var username = req.body.username;
+  var password = req.body.password;
+
+  new User({username: username }).fetch().then(function (found) {
+    if(found) {
+      if (found.attributes.password === password) {
+        console.log('you passed!');
+        req.session.regenerate(function(){
+          req.session.user = username;
+          res.redirect('/');
+        });
+      } else {
+        //call a function that lets the user know the username/password combo they tried does note exist
+        console.log('wrong password or user does not exist');
+      }
+    } else {
+      console.log('wrong password or user does not exist');
+    }
+  });
+
 });
 
 // Define /login post route
