@@ -45,11 +45,6 @@ app.use(passport.session());
  *
  */
 
-// Passport session setup.
-//   To support persistent login sessions, Passport needs to be able to
-//   serialize users into and deserialize users out of the session.  Typically,
-//   this will be as simple as storing the user ID when serializing, and finding
-//   the user by ID when deserializing.
 passport.serializeUser(function(user, done) {
   done(null, user.id);
 });
@@ -64,40 +59,17 @@ passport.deserializeUser(function(id, done) {
   });
 });
 
-
-// Use the LocalStrategy within Passport.
-//   Strategies in passport require a `verify` function, which accept
-//   credentials (in this case, a username and password), and invoke a callback
-//   with a user object.  In the real world, this would query a database;
-//   however, in this example we are using a baked-in set of users.
 passport.use(new LocalStrategy(
   function(username, password, done) {
-    // asynchronous verification, for effect...
     process.nextTick(function () {
-
-      // Find the user by username.  If there is no user with the given
-      // username, or the password is not correct, set the user to `false` to
-      // indicate failure and set a flash message.  Otherwise, return the
-      // authenticated `user`.
-
-
-      // findByUsername(username, function(err, user) {
-      //   if (err) { return done(err); }
-      //   if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
-      //   if (user.password != password) { return done(null, false, { message: 'Invalid password' }); }
-      //   return done(null, user);
-      // });€€
 
       util.findByUsername(username).then(function (user) {
         if(user) {
-          bcrypt.compare(password, user.get('password'), function(err, result) {
-            if (result) {
-              console.log('done inside of user:',done);
-              console.log('user attributes', user.attributes);
+          user.compare(password, function(isMatch) {
+            if (isMatch) {
               return done(null, user.attributes);
             } else {
-              //call a function that lets the user know the username/password combo they tried does note exist
-              console.log('wrong password or user does not exist');
+              //TODO: call a function that lets the user know the username/password combo they tried does note exist
               return done(null, false, { message: 'Invalid username or password' });
             }
           });
@@ -116,26 +88,12 @@ passport.use(new LocalStrategy(
  *
  */
 
-
-function restrict(req, res, next) {
-  console.log('inside of restrict');
-  console.log('req', req.session);
-  if (req.isAuthenticated()) {
-    console.log('inside of true');
-    next();
-  } else {
-    console.log('inside of false in restrict');
-    req.session.error = 'Access denied!';
-    res.redirect('/login');
-  }
-}
-
-app.get('/', restrict,
+app.get('/', util.restrict,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', restrict,
+app.get('/create', util.restrict,
 function(req, res) {
   res.render('index');
 });
@@ -151,19 +109,18 @@ function(req, res) {
 });
 
 app.get('/logout', function(req, res){
-    req.session.destroy(function(){
-        res.redirect('/');
-    });
+    req.logout();
+    res.redirect('/');
 });
 
-app.get('/links',restrict,
+app.get('/links',util.restrict,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links',restrict,
+app.post('/links',util.restrict,
 function(req, res) {
   var uri = req.body.url;
 
@@ -172,9 +129,8 @@ function(req, res) {
     return res.send(404);
   }
 
-  var testLink = new Link({ url: uri });
-  console.log(testLink);
-  testLink.fetch().then(function(found) {
+  new Link({ url: uri }).fetch()
+  .then(function(found) {
     if (found) {
       res.send(200, found.attributes);
     } else {
@@ -208,56 +164,28 @@ function(req, res) {
   new User({username: username }).fetch().then(function (found) {
     if (found) {
       // TODO: Let the client know that the username already exists
-      console.log('found');
+      console.log('user already exists');
     } else {
       var user = new User({
         username: username,
         password: password
       });
 
-      user.hash(function() {
-        user.save().then(function(newUser) {
-          Users.add(newUser);
-          res.redirect('/login');
-        });
+      user.save().then(function(newUser) {
+        Users.add(newUser);
+        res.redirect('/login');
       });
     }
   });
 });
 
 app.post('/login',
-  passport.authenticate('local', { successRedirect: '/',
-                                   failureRedirect: '/login' }));
+  passport.authenticate('local', {
+    successRedirect: '/',
+    failureRedirect: '/login'
+  })
+);
 
-// app.post('/login',
-//   passport.authenticate('local'),
-//   function(req, res) {
-//     res.redirect('/');
-//   }
-// );
-
-// Define /login post route
-
-/************************************************************/
-// Write your authentication routes here
-/************************************************************/
-//talk through how we would implement everything in extra credit and nightmare modes
-//1. Sessions manually
-//2. database stuff- each user gets their own links
-//3. oauth- log in with github credentials
-//sessions:
-  //time to live for tokens
-  //saving tokens in database along with their expiration time
-  //allowing a user to have multiple tokens (across multiple devices)
-
-
-
-//** 1. store username and password in plain text
-//** define user flow in terms of login page, signup page
-//**2. sessions and tokens stored on the cookie
-//**logout
-//**tests
-//**3. salting and hashing
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
