@@ -15,6 +15,7 @@ var Click = require('./app/models/click');
 
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
+var flash = require('connect-flash');
 
 
 var app = express();
@@ -55,7 +56,11 @@ passport.serializeUser(function(user, done) {
 
 passport.deserializeUser(function(id, done) {
   util.findById(id).then(function (found) {
-    done(err, found.attributes);
+    if (found) {
+      done(null, found.attributes);
+    } else {
+      done(new Error('User ' + id + ' does not exist'));
+    }
   });
 });
 
@@ -83,11 +88,13 @@ passport.use(new LocalStrategy(
       //   return done(null, user);
       // });€€
 
-      util.findByUsername(username).then(function (found) {
-        if(found) {
-          bcrypt.compare(password, found.attributes.password, function(err, result) {
+      util.findByUsername(username).then(function (user) {
+        if(user) {
+          bcrypt.compare(password, user.get('password'), function(err, result) {
             if (result) {
-              return done(null, found.attributes);
+              console.log('done inside of user:',done);
+              console.log('user attributes', user.attributes);
+              return done(null, user.attributes);
             } else {
               //call a function that lets the user know the username/password combo they tried does note exist
               console.log('wrong password or user does not exist');
@@ -111,9 +118,13 @@ passport.use(new LocalStrategy(
 
 
 function restrict(req, res, next) {
-  if (req.session.user) {
+  console.log('inside of restrict');
+  console.log('req', req.session);
+  if (req.isAuthenticated()) {
+    console.log('inside of true');
     next();
   } else {
+    console.log('inside of false in restrict');
     req.session.error = 'Access denied!';
     res.redirect('/login');
   }
@@ -214,31 +225,16 @@ function(req, res) {
   });
 });
 
-app.post('/login', function(req, res) {
+app.post('/login',
+  passport.authenticate('local', { successRedirect: '/',
+                                   failureRedirect: '/login' }));
 
-  var username = req.body.username;
-  var password = req.body.password;
-
-  new User({username: username }).fetch().then(function (found) {
-    if(found) {
-      bcrypt.compare(password, found.attributes.password, function(err, result) {
-        if (result) {
-          console.log('you passed!');
-          req.session.regenerate(function(){
-            req.session.user = username;
-            res.redirect('/');
-          });
-        } else {
-          //call a function that lets the user know the username/password combo they tried does note exist
-          console.log('wrong password or user does not exist');
-        }
-      });
-    } else {
-      console.log('wrong password or user does not exist');
-    }
-  });
-
-});
+// app.post('/login',
+//   passport.authenticate('local'),
+//   function(req, res) {
+//     res.redirect('/');
+//   }
+// );
 
 // Define /login post route
 
