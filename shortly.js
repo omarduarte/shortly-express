@@ -15,6 +15,7 @@ var Click = require('./app/models/click');
 
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
+var GithubStrategy = require('passport-github').Strategy;
 var flash = require('connect-flash');
 
 
@@ -59,8 +60,36 @@ passport.deserializeUser(function(id, done) {
   });
 });
 
+passport.use(new GithubStrategy({
+    clientID: '63de983444e9cef7618c',
+    clientSecret: '2d31645a65338d346498c9da5af0b140a920f397',
+    callbackURL: "http://127.0.0.1:4568/auth/github/callback"
+  },
+  function(accessToken, refreshToken, profile, done) {
+    console.log('github profile');
+    console.log(profile);
+    new User({githubId: profile.id }).fetch().then(function (found) {
+      if (found) {
+        console.log('user already exists');
+        return done(null, found.attributes);
+      } else {
+        var user = new User({
+          githubId: profile.id
+        });
+
+        user.save().then(function(newUser) {
+          Users.add(newUser);
+          done(null,newUser);
+        });
+      }
+    });
+  }
+));
+
+
 passport.use(new LocalStrategy(
   function(username, password, done) {
+    console.log('this has been invoked');
     process.nextTick(function () {
 
       util.findByUsername(username).then(function (user) {
@@ -178,6 +207,16 @@ function(req, res) {
     }
   });
 });
+
+
+app.get('/auth/github',
+  passport.authenticate('github'));
+
+app.get('/auth/github/callback',
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  function(req, res) {
+    res.redirect('/');
+  });
 
 app.post('/login',
   passport.authenticate('local', {

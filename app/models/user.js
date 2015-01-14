@@ -12,7 +12,13 @@ var User = db.Model.extend({
   },
 
   initialize: function(){
-    this.on('creating', this.hashPassword);
+    this.on('creating', function() {
+      console.log('arguments inside of initialize');
+      console.log(arguments);
+      if(!this.get('githubId')) {
+        this.hashPassword();
+      }
+    }, this);
   },
 
   compare: function(password, callback) {
